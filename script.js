@@ -1,8 +1,8 @@
 /* ============ CONFIGURAÇÃO CENTRAL (edite aqui) ============ */
 const CONFIG = {
   sound: true,                      // som grave nos cliques dos cartões
-  whatsapp: "5500000000000",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
-  email: "",                         // PLACEHOLDER: e-mail comercial (vazio = não aparece no rodapé)
+  whatsapp: "5531987602779",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
+  email: "tarcisosf08@gmail.com",                         // PLACEHOLDER: e-mail comercial (vazio = não aparece no rodapé)
   social: { Instagram: "", LinkedIn: "", Facebook: "" } // PLACEHOLDER: URLs completas (vazio = não aparece)
 };
 const WA = (t, m) => `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(m || "Olá, Seu Site Ponto Com! Gostaria de solicitar um orçamento: " + t + ".")}`;
