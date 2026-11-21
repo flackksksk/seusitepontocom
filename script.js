@@ -3,7 +3,7 @@ const CONFIG = {
   sound: true,
   maptilerKey: "9SeBYpW6Gdf581duzXA9", // chave MapTiler (restrinja por domínio no painel da MapTiler)
   home: { lat: -19.4658, lng: -44.2469, nome: "Sete Lagoas, MG" }, // usado se a pessoa negar a localização                      // som grave nos cliques dos cartões
-  whatsapp: "5500000000000",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
+  whatsapp: "5531987602779",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
   email: "",                         // PLACEHOLDER: e-mail comercial (vazio = não aparece no rodapé)
   social: { Instagram: "", LinkedIn: "", Facebook: "" } // PLACEHOLDER: URLs completas (vazio = não aparece)
 };
