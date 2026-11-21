@@ -1,7 +1,7 @@
 /* ============ CONFIGURAÇÃO CENTRAL (edite aqui) ============ */
 const CONFIG = {
   sound: true,                      // som grave nos cliques dos cartões
-  whatsapp: "5500000000000",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
+  whatsapp: "5531987602779",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
   email: "",                         // PLACEHOLDER: e-mail comercial (vazio = não aparece no rodapé)
   social: { Instagram: "", LinkedIn: "", Facebook: "" } // PLACEHOLDER: URLs completas (vazio = não aparece)
 };
