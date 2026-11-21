@@ -298,3 +298,4 @@ body.mono{--c:#fff;--c2:#fff;--cd:#999;--rgb:255,255,255;--rgb2:255,255,255}body
 #pg-diferenciais{padding-top:96px}#pg-diferenciais h2{font-size:clamp(24px,3vw,38px);margin-bottom:0;max-width:30ch}#pg-diferenciais .mp{margin-top:18px}
 #pg-diferenciais h2{max-width:none}
 .pin-s{width:8px;height:11px;margin-right:5px;vertical-align:-1px;opacity:.5;animation:none}
+.mp.rm .rc{display:none}.ex{align-items:flex-start;font-size:11px;line-height:1.45;background:rgba(0,0,0,.4)}.ex i{margin-top:4px;flex:none}

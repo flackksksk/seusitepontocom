@@ -3,13 +3,14 @@ const CONFIG = {
   sound: true,
   maptilerKey: "9SeBYpW6Gdf581duzXA9", // chave MapTiler (restrinja por domínio no painel da MapTiler)
   home: { lat: -19.4658, lng: -44.2469, nome: "Sete Lagoas, MG" }, // usado se a pessoa negar a localização                      // som grave nos cliques dos cartões
-  whatsapp: "5531987602779",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
+  whatsapp: "5500000000000",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
   email: "",                         // PLACEHOLDER: e-mail comercial (vazio = não aparece no rodapé)
   social: { Instagram: "", LinkedIn: "", Facebook: "" } // PLACEHOLDER: URLs completas (vazio = não aparece)
 };
 const WA = (t, m) => `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(m || "Olá, Seu Site Ponto Com! Gostaria de solicitar um orçamento: " + t + ".")}`;
 
 const TH = { r: "225,6,0", r2: "255,70,50" };
+let onTheme = () => { };
 /* ============ CONTEÚDO ============ */
 const PIL = [["design", "Design", "Interfaces modernas e experiências visuais cuidadosamente desenvolvidas."], ["tech", "Tecnologia", "Soluções digitais funcionais, responsivas e preparadas para crescer."], ["strat", "Estratégia", "Projetos pensados para melhorar a apresentação e a comunicação das empresas."]];
 const SV = [["vitrine", "Sites vitrine", "Apresentação profissional da empresa, seus serviços, diferenciais e canais de contato."], ["land", "Landing pages", "Páginas estratégicas desenvolvidas para campanhas, divulgação e conversão de visitantes."], ["inst", "Sites institucionais", "Websites completos para empresas que desejam apresentar sua história, estrutura e serviços."], ["cat", "Catálogos digitais", "Apresentação organizada de produtos, categorias e informações comerciais."], ["loja", "Lojas virtuais", "Estruturação de lojas online para empresas que desejam comercializar seus produtos na internet."], ["manu", "Manutenção e atualizações", "Suporte para pequenas melhorias, atualização de informações e manutenção de websites."]];
@@ -153,11 +154,11 @@ const swell = () => { if (!CONFIG.sound) return; try { AC = AC || new (window.Au
 const mp = $("#mp");
 if (mp.querySelector) {
   const cv = $("#mc"), gl = $("#mg"), mm = $("#mm"), HM = CONFIG.home, pgD = pages.diferenciais, wait = ms => new Promise(r => setTimeout(r, ms));
-  let map = null, mk = null, fbm = null, T = null, tres = null, tried = 0, busyP = 0, spin = 0, arrived = 0, seedv = 0, gRot = 0, gW = 0, gH = 0;
+  let aL = 0, map = null, mk = null, fbm = null, T = null, tres = null, tried = 0, busyP = 0, spin = 0, arrived = 0, seedv = 0, gRot = 0, gW = 0, gH = 0;
   const gx = gl.getContext("2d"), sd = t => Math.abs(Math.round(t.la * 100) * 7919 + Math.round(t.ln * 100)) || 7;
-  const lab = t => { $("#ml").textContent = t.real ? "Sua localização atual" : HM.nome; $("#mco").textContent = t.la.toFixed(4) + ", " + t.ln.toFixed(4); };
+  const lab = t => { $("#ml").textContent = t.real ? "Sua localização atual" : HM.nome + " · exemplo"; $("#mco").textContent = t.la.toFixed(4) + ", " + t.ln.toFixed(4) + (t.real ? "" : " · exemplo"); $("#mex").hidden = !!t.real; };
   const targetP = () => T ? Promise.resolve(T) : new Promise(r => tres = r);
-  const setT = t => { T = t; if (tres) { tres(t); tres = null; } if (arrived) { lab(t); if (mk) { mk.setLngLat([t.ln, t.la]); map.easeTo({ center: [t.ln, t.la], duration: 1500 }); } } };
+  const setT = t => { T = t; if (tres) { tres(t); tres = null; } if (arrived) { lab(t); if (map && aL) { map.getSource("me").setData({ type: "Point", coordinates: [t.ln, t.la] }); map.getSource("ring").setData(circ(t.la, t.ln, 10000)); map.easeTo({ center: [t.ln, t.la], duration: 1500 }); } } };
   const home = () => ({ la: HM.lat, ln: HM.lng, real: 0 });
   const startGeo = () => {
     if (!navigator.geolocation) return setT(home());
@@ -192,10 +193,29 @@ if (mp.querySelector) {
     }
     requestAnimationFrame(gdraw);
   };
+  const dest = (la, ln, d, b) => { const r = 6371000, f = la * Math.PI / 180, l = ln * Math.PI / 180, e = d / r, q = b * Math.PI / 180, p = Math.asin(Math.sin(f) * Math.cos(e) + Math.cos(f) * Math.sin(e) * Math.cos(q)), n = l + Math.atan2(Math.sin(q) * Math.sin(e) * Math.cos(f), Math.cos(e) - Math.sin(f) * Math.sin(p)); return [n * 180 / Math.PI, p * 180 / Math.PI]; };
+  const circ = (la, ln, d) => ({ type: "Feature", geometry: { type: "Polygon", coordinates: [Array.from({ length: 73 }, (_, i) => dest(la, ln, d, i * 5))] } });
+  const wedge = (la, ln, d, a) => ({ type: "Feature", geometry: { type: "Polygon", coordinates: [[[ln, la], ...Array.from({ length: 13 }, (_, i) => dest(la, ln, d, a + i * 4)), [ln, la]]] } });
+  const cols = () => { const s = getComputedStyle(document.documentElement); return [s.getPropertyValue("--c").trim(), s.getPropertyValue("--c2").trim()]; };
+  const addLayers = t => {
+    const [A, A2] = cols(), ground = { "circle-pitch-alignment": "map", "circle-pitch-scale": "map" };
+    map.addSource("me", { type: "geojson", data: { type: "Point", coordinates: [t.ln, t.la] } }); map.addSource("ring", { type: "geojson", data: circ(t.la, t.ln, 10000) }); map.addSource("sw", { type: "geojson", data: wedge(t.la, t.ln, 10000, 0) });
+    map.addLayer({ id: "rf", type: "fill", source: "ring", paint: { "fill-color": A, "fill-opacity": .07 } });
+    map.addLayer({ id: "rl", type: "line", source: "ring", paint: { "line-color": A2, "line-width": 1.5, "line-dasharray": [3, 3], "line-opacity": .85 } });
+    map.addLayer({ id: "sw", type: "fill", source: "sw", paint: { "fill-color": A, "fill-opacity": .3 } });
+    ["p1", "p2"].forEach(id => map.addLayer({ id, type: "circle", source: "me", paint: { "circle-radius": 8, "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": A2, "circle-stroke-width": 2, ...ground } }));
+    map.addLayer({ id: "core", type: "circle", source: "me", paint: { "circle-radius": 8, "circle-color": A, "circle-stroke-color": "#fff", "circle-stroke-width": 3, ...ground } });
+  };
+  onTheme = () => { if (!map || !aL) return; const [A, A2] = cols(); [["rf", "fill-color", A], ["rl", "line-color", A2], ["sw", "fill-color", A], ["p1", "circle-stroke-color", A2], ["p2", "circle-stroke-color", A2], ["core", "circle-color", A]].forEach(([i, p, v]) => map.setPaintProperty(i, p, v)); };
+  const animL = ms => {
+    if (!aL || !map) return;
+    if (!pgD.hidden) { const k = ms / 2800 % 1, k2 = (k + .5) % 1; map.setPaintProperty("p1", "circle-radius", 8 + k * 110); map.setPaintProperty("p1", "circle-stroke-opacity", (1 - k) * .9); map.setPaintProperty("p2", "circle-radius", 8 + k2 * 110); map.setPaintProperty("p2", "circle-stroke-opacity", (1 - k2) * .9); map.getSource("sw").setData(wedge(T.la, T.ln, 10000, ms / 12 % 360)); }
+    requestAnimationFrame(animL);
+  };
   const spinMap = () => { if (!spin || !map) return; const c = map.getCenter(); map.setCenter([c.lng + .18, 15]); requestAnimationFrame(spinMap); };
   const play = async () => {
     if (busyP) return; busyP = 1; arrived = 0; mp.classList.remove("go");
-    if (mk) { mk.remove(); mk = null; } if (fbm) { fbm.remove(); fbm = null; } gl.getAnimations().forEach(a => a.cancel());
+    aL = 0; if (map) { ["p1", "p2", "core", "sw", "rl", "rf"].forEach(i => map.getLayer(i) && map.removeLayer(i)); ["me", "ring", "sw"].forEach(i => map.getSource(i) && map.removeSource(i)); } $("#mex").hidden = true; if (fbm) { fbm.remove(); fbm = null; } gl.getAnimations().forEach(a => a.cancel());
     $("#ml").textContent = "Localizando…"; $("#mco").textContent = "—";
     if (!tried) {
       tried = 1; startGeo();
@@ -205,9 +225,9 @@ if (mp.querySelector) {
     if (map) { map.jumpTo({ center: [-44, 15], zoom: 1, pitch: 0, bearing: 0 }); spinMap(); } else { gsize(); gdraw(); }
     const t = await targetP(); await wait(2600); spin = 0; lab(t);
     if (map) {
-      map.flyTo({ center: [t.ln, t.la], zoom: 12.8, pitch: 55, bearing: -25, duration: 7000, curve: 1.5, essential: true });
+      map.flyTo({ center: [t.ln, t.la], zoom: 11.8, pitch: 55, bearing: -25, duration: 7000, curve: 1.5, essential: true });
       await new Promise(r => map.once("moveend", r));
-      mk = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pm" }), anchor: "center" }).setLngLat([t.ln, t.la]).addTo(map);
+      addLayers(t); aL = 1; requestAnimationFrame(animL);
     } else {
       seedv = sd(t); drawMap(cv, seedv); gl.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(10)", opacity: 0 }], { duration: 2600, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" });
       await wait(1500); mp.classList.add("go"); await wait(1100); fbm = document.createElement("div"); fbm.className = "pm fb"; $(".mpv").append(fbm);
@@ -223,7 +243,7 @@ if (!RM && FINE) { let qd = 0, wx = 0, wy = 0; addEventListener("pointermove", e
 const THEMES = { red: ["#E10600", "#FF3B30", "#a30000", "225,6,0", "255,70,50"], blue: ["#1F6BFF", "#4D9BFF", "#0a3fa8", "31,107,255", "77,155,255"], green: ["#0FB872", "#2EE59D", "#07673f", "15,184,114", "46,229,157"], violet: ["#7C4DFF", "#A78BFA", "#46239e", "124,77,255", "167,139,250"], orange: ["#FF7A00", "#FFA13D", "#a34b00", "255,122,0", "255,161,61"] };
 const setTheme = (k, x, y) => {
   const t = THEMES[k]; if (!t) return; const s = document.documentElement.style;
-  ["--c", "--c2", "--cd"].forEach((v, i) => s.setProperty(v, t[i])); s.setProperty("--rgb", t[3]); s.setProperty("--rgb2", t[4]); TH.r = t[3]; TH.r2 = t[4];
+  ["--c", "--c2", "--cd"].forEach((v, i) => s.setProperty(v, t[i])); s.setProperty("--rgb", t[3]); s.setProperty("--rgb2", t[4]); TH.r = t[3]; TH.r2 = t[4]; onTheme();
   $$(".pal button").forEach(b => b.setAttribute("aria-pressed", b.dataset.th === k)); try { localStorage.setItem("th", k); } catch (e) { }
   if (x != null && !RM) { const i = document.createElement("i"); i.className = "ink"; i.style.cssText = `left:${x}px;top:${y}px;background:${t[0]}`; document.body.append(i); i.animate([{ transform: "scale(0)", opacity: .55 }, { transform: "scale(70)", opacity: 0 }], { duration: 1000, easing: "cubic-bezier(.2,.7,.2,1)" }).finished.then(() => i.remove()); thump(1.3); }
 };
