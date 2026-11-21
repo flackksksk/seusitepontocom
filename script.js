@@ -1,7 +1,9 @@
 /* ============ CONFIGURAÇÃO CENTRAL (edite aqui) ============ */
 const CONFIG = {
-  sound: true,                      // som grave nos cliques dos cartões
-  whatsapp: "5531987602779",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
+  sound: true,
+  maptilerKey: "9SeBYpW6Gdf581duzXA9", // chave MapTiler (restrinja por domínio no painel da MapTiler)
+  home: { lat: -19.4658, lng: -44.2469, nome: "Sete Lagoas, MG" }, // usado se a pessoa negar a localização                      // som grave nos cliques dos cartões
+  whatsapp: "5500000000000",        // PLACEHOLDER: DDI + DDD + número, só dígitos (ex.: 5511999999999)
   email: "",                         // PLACEHOLDER: e-mail comercial (vazio = não aparece no rodapé)
   social: { Instagram: "", LinkedIn: "", Facebook: "" } // PLACEHOLDER: URLs completas (vazio = não aparece)
 };
@@ -146,18 +148,75 @@ function drawMap(cv, seed) {
   walk(380, .7, "rgba(110,130,255,.3)", 160 * d, 0); walk(55, 1.3, "rgba(150,175,255,.75)", 380 * d, 6);
   x.shadowBlur = 0; x.strokeStyle = "rgba(160,180,255,.55)"; x.lineWidth = 1.4 * d; x.beginPath(); x.ellipse(W / 2, H / 2, W * .3, H * .34, r() * .6, 0, 7); x.stroke();
 }
+/* ============ DIFERENCIAIS: GLOBO → ZOOM → LOCALIZAÇÃO EM TEMPO REAL ============ */
+const swell = () => { if (!CONFIG.sound) return; try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume && AC.resume(); const t = AC.currentTime, f = AC.createBiquadFilter(), m = AC.createGain(); f.type = "lowpass"; f.frequency.setValueAtTime(110, t); f.frequency.exponentialRampToValueAtTime(360, t + 1.3); f.frequency.exponentialRampToValueAtTime(90, t + 3.6); m.gain.setValueAtTime(0, t); m.gain.linearRampToValueAtTime(.32, t + 1); m.gain.exponentialRampToValueAtTime(.001, t + 3.8); f.connect(m); m.connect(AC.destination); [[1, 0, .9, "sine"], [.5, 4, .5, "sine"], [2, -3, .12, "triangle"]].forEach(([k, dt, v, ty]) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = ty; o.frequency.setValueAtTime(82 * k, t); o.frequency.exponentialRampToValueAtTime(46 * k, t + 3.5); o.detune.value = dt; g.gain.value = v; o.connect(g); g.connect(f); o.start(t); o.stop(t + 3.9); }); } catch (e) { } };
 const mp = $("#mp");
 if (mp.querySelector) {
-  const cv = $("#mc"); let seed = 7, drawn = 0;
-  $(".rc", mp).insertAdjacentHTML("beforeend", Array.from({ length: 9 }, (_, i) => { const a = Math.random() * 6.28, q = Math.sqrt(Math.random()) * .42; return `<i class="mk2" style="left:${50 + Math.cos(a) * q * 100}%;top:${50 + Math.sin(a) * q * 100}%;--d:${1.6 + i * .35}s"></i>`; }).join(""));
-  const paint = (lat, lng, msg) => { seed = Math.abs(Math.round(lat * 100) * 7919 + Math.round(lng * 100)) || 7; $("#ml").textContent = msg; $("#mco").textContent = lat.toFixed(4) + ", " + lng.toFixed(4); drawMap(cv, seed); drawn = 1; cv.animate([{ opacity: .3 }, { opacity: 1 }], { duration: 700 }); };
-  new IntersectionObserver((es, ob) => {
-    if (!es[0].isIntersecting) return; ob.disconnect(); paint(-23.5505, -46.6333, "Localização de exemplo");
-    if (navigator.geolocation) navigator.geolocation.getCurrentPosition(p => paint(p.coords.latitude, p.coords.longitude, "Sua localização atual"), () => { }, { timeout: 8000, maximumAge: 600000 });
-  }, { threshold: .3 }).observe(mp);
-  addEventListener("resize", () => { if (drawn) drawMap(cv, seed); });
+  const cv = $("#mc"), gl = $("#mg"), mm = $("#mm"), HM = CONFIG.home, pgD = pages.diferenciais, wait = ms => new Promise(r => setTimeout(r, ms));
+  let map = null, mk = null, fbm = null, T = null, tres = null, tried = 0, busyP = 0, spin = 0, arrived = 0, seedv = 0, gRot = 0, gW = 0, gH = 0;
+  const gx = gl.getContext("2d"), sd = t => Math.abs(Math.round(t.la * 100) * 7919 + Math.round(t.ln * 100)) || 7;
+  const lab = t => { $("#ml").textContent = t.real ? "Sua localização atual" : HM.nome; $("#mco").textContent = t.la.toFixed(4) + ", " + t.ln.toFixed(4); };
+  const targetP = () => T ? Promise.resolve(T) : new Promise(r => tres = r);
+  const setT = t => { T = t; if (tres) { tres(t); tres = null; } if (arrived) { lab(t); if (mk) { mk.setLngLat([t.ln, t.la]); map.easeTo({ center: [t.ln, t.la], duration: 1500 }); } } };
+  const home = () => ({ la: HM.lat, ln: HM.lng, real: 0 });
+  const startGeo = () => {
+    if (!navigator.geolocation) return setT(home());
+    navigator.geolocation.watchPosition(p => setT({ la: p.coords.latitude, ln: p.coords.longitude, real: 1 }), () => { if (!T) setT(home()); }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+    setTimeout(() => { if (!T) setT(home()); }, 9000);
+  };
+  const loadML = () => new Promise((ok, no) => { if (window.maplibregl) return ok(); const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/maplibre-gl@5.0.0/dist/maplibre-gl.js"; s.onload = ok; s.onerror = no; document.head.append(s); });
+  const initMap = () => new Promise(ok => {
+    if (!CONFIG.maptilerKey) return ok(0);
+    loadML().then(() => {
+      let d = 0; const win = v => { if (!d) { d = 1; ok(v); } };
+      try {
+        map = new maplibregl.Map({ container: mm, style: `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${CONFIG.maptilerKey}`, center: [-44, 15], zoom: 1, pitch: 0, interactive: false, attributionControl: false, fadeDuration: 250 });
+        map.on("style.load", () => map.setProjection({ type: "globe" })); map.once("load", () => win(1)); map.on("error", () => win(0));
+      } catch (e) { win(0); }
+      setTimeout(() => win(0), 7000);
+    }).catch(() => ok(0));
+  });
+  const GP = Array.from({ length: 650 }, () => { const u = Math.random() * 2 - 1, a = Math.random() * 6.283, s = Math.sqrt(1 - u * u); return [s * Math.cos(a), u, s * Math.sin(a)]; });
+  const gsize = () => { const d = Math.min(devicePixelRatio || 1, 2); gW = gl.width = gl.clientWidth * d; gH = gl.height = gl.clientHeight * d; };
+  const gdraw = () => {
+    if (!spin) return;
+    if (!pgD.hidden) {
+      gRot += .006; const R = Math.min(gW, gH) * .36, cx = gW / 2, cy = gH / 2, c = Math.cos(gRot), s = Math.sin(gRot), x = gx, pr = (X, Y, Z) => [cx + R * (X * c + Z * s), cy - R * Y, -X * s + Z * c];
+      x.clearRect(0, 0, gW, gH); const g = x.createRadialGradient(cx - R * .3, cy - R * .3, R * .1, cx, cy, R); g.addColorStop(0, "#1b2140"); g.addColorStop(1, "#07080f");
+      x.fillStyle = g; x.beginPath(); x.arc(cx, cy, R, 0, 7); x.fill(); x.strokeStyle = `rgba(${TH.r2},.6)`; x.lineWidth = 2; x.shadowBlur = 26; x.shadowColor = `rgb(${TH.r2})`; x.stroke(); x.shadowBlur = 0;
+      x.strokeStyle = "rgba(140,160,255,.22)"; x.lineWidth = 1;
+      const line = f => { x.beginPath(); let on = 0; for (let n = 0; n <= 36; n++) { const p = f(n); if (p[2] > 0) { on ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); on = 1; } else on = 0; } x.stroke(); };
+      for (let m = 0; m < 12; m++) line(n => { const a = m * Math.PI / 6, la = (n * 5 - 90) * Math.PI / 180; return pr(Math.cos(la) * Math.cos(a), Math.sin(la), Math.cos(la) * Math.sin(a)); });
+      for (let l = -60; l <= 60; l += 30) line(n => { const la = l * Math.PI / 180, t = n * Math.PI / 18; return pr(Math.cos(la) * Math.cos(t), Math.sin(la), Math.cos(la) * Math.sin(t)); });
+      for (const q of GP) { const p = pr(q[0], q[1], q[2]); if (p[2] > 0) { x.fillStyle = `rgba(${TH.r2},${.25 + p[2] * .65})`; x.fillRect(p[0], p[1], 2, 2); } }
+    }
+    requestAnimationFrame(gdraw);
+  };
+  const spinMap = () => { if (!spin || !map) return; const c = map.getCenter(); map.setCenter([c.lng + .18, 15]); requestAnimationFrame(spinMap); };
+  const play = async () => {
+    if (busyP) return; busyP = 1; arrived = 0; mp.classList.remove("go");
+    if (mk) { mk.remove(); mk = null; } if (fbm) { fbm.remove(); fbm = null; } gl.getAnimations().forEach(a => a.cancel());
+    $("#ml").textContent = "Localizando…"; $("#mco").textContent = "—";
+    if (!tried) {
+      tried = 1; startGeo();
+      if (await initMap()) { mp.classList.add("rm"); mm.classList.add("on"); } else { try { map && map.remove(); } catch (e) { } map = null; }
+    }
+    gl.style.display = map ? "none" : ""; cv.style.display = map ? "none" : ""; spin = 1;
+    if (map) { map.jumpTo({ center: [-44, 15], zoom: 1, pitch: 0, bearing: 0 }); spinMap(); } else { gsize(); gdraw(); }
+    const t = await targetP(); await wait(2600); spin = 0; lab(t);
+    if (map) {
+      map.flyTo({ center: [t.ln, t.la], zoom: 12.8, pitch: 55, bearing: -25, duration: 7000, curve: 1.5, essential: true });
+      await new Promise(r => map.once("moveend", r));
+      mk = new maplibregl.Marker({ element: Object.assign(document.createElement("div"), { className: "pm" }), anchor: "center" }).setLngLat([t.ln, t.la]).addTo(map);
+    } else {
+      seedv = sd(t); drawMap(cv, seedv); gl.animate([{ transform: "scale(1)", opacity: 1 }, { transform: "scale(10)", opacity: 0 }], { duration: 2600, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" });
+      await wait(1500); mp.classList.add("go"); await wait(1100); fbm = document.createElement("div"); fbm.className = "pm fb"; $(".mpv").append(fbm);
+    }
+    mp.classList.add("go"); swell(); arrived = 1; busyP = 0; if (T !== t) setT(T);
+  };
+  new IntersectionObserver(es => { if (es[0].isIntersecting) play(); }, { threshold: .3 }).observe(mp);
+  addEventListener("resize", () => { if (!spin && !seedv) return; gsize(); if (seedv) drawMap(cv, seedv); if (map) map.resize(); });
 }
-
 /* ============ LETRAS REAGEM AO CURSOR ============ */
 if (!RM && FINE) { let qd = 0, wx = 0, wy = 0; addEventListener("pointermove", e => { wx = e.clientX; wy = e.clientY; if (qd) return; qd = 1; requestAnimationFrame(() => { qd = 0; $$("#pg-" + cur + " .kt.d .w i").forEach(w => { const r = w.getBoundingClientRect(), k = Math.max(0, 1 - Math.hypot(wx - (r.left + r.width / 2), wy - (r.top + r.height / 2)) / 150); w.style.setProperty("--ty", -k * 12 + "px"); w.style.setProperty("--sc", 1 + k * .12); }); }); }, { passive: true }); }
 /* ============ PALETA: TROCA O TEMA DO SITE ============ */

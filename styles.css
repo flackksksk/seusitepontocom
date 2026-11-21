@@ -284,3 +284,17 @@ body.mono{--c:#fff;--c2:#fff;--cd:#999;--rgb:255,255,255;--rgb2:255,255,255}body
 .qm i{position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(255,255,255,.35);animation:sp 16s linear infinite}.qm i+i{inset:14%;animation-direction:reverse;border-style:solid;border-color:rgba(255,255,255,.12)}.qm span{position:absolute;bottom:-8px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--w2)}
 @media(max-width:800px){.qm{display:none}}
 .eterm{transition:opacity .4s}.eterm:empty{opacity:0}
+
+/* maplibre (css mínimo) + globo/zoom */
+.maplibregl-map{position:relative;overflow:hidden}.maplibregl-canvas{position:absolute;left:0;top:0}.maplibregl-marker{position:absolute;top:0;left:0;will-change:transform}
+.mp{min-height:580px}.mpv{background:radial-gradient(1px 1px at 12% 20%,#fff,transparent),radial-gradient(1px 1px at 78% 12%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 82%,#cfd6ff,transparent),radial-gradient(1px 1px at 90% 70%,#fff,transparent),radial-gradient(1px 1px at 55% 38%,#fff,transparent),radial-gradient(1px 1px at 6% 62%,#fff,transparent),radial-gradient(60% 60% at 50% 50%,#10131f,#05060a)}
+#mm{position:absolute;inset:0;opacity:0;transition:opacity 1.4s}#mm.on{opacity:1}#mg{clip-path:none!important;transition:none}
+.mp.in #mc{clip-path:circle(0% at 50% 50%)}.mp.go #mc{clip-path:circle(80% at 50% 50%)}.mp.in .rc{opacity:0;scale:.3}.mp.go .rc{opacity:1;scale:1}
+.attr{display:none;position:absolute;right:10px;bottom:46px;font-size:10px;color:rgba(255,255,255,.7);z-index:3}.mp.rm .attr{display:block}
+.pm{width:24px;height:24px;border-radius:50%;background:var(--c);border:3px solid #fff;box-shadow:0 0 0 6px rgba(var(--rgb),.25),0 0 34px var(--c)}
+.pm::before,.pm::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--c2);animation:lp 2.8s ease-out infinite}.pm::after{animation-delay:1.4s}@keyframes lp{from{transform:scale(.5);opacity:.9}to{transform:scale(4.6);opacity:0}}
+.pm.fb{position:absolute;left:50%;top:50%;margin:-12px 0 0 -12px;z-index:2}
+.pin-s{width:12px;height:16px;overflow:visible;vertical-align:-3px;margin-right:6px;display:inline-block;animation:pinb 2.4s ease-in-out infinite}
+#pg-diferenciais{padding-top:96px}#pg-diferenciais h2{font-size:clamp(24px,3vw,38px);margin-bottom:0;max-width:30ch}#pg-diferenciais .mp{margin-top:18px}
+#pg-diferenciais h2{max-width:none}
+.pin-s{width:8px;height:11px;margin-right:5px;vertical-align:-1px;opacity:.5;animation:none}
